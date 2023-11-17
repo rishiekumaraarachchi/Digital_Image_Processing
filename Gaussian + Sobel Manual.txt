@@ -1,0 +1,83 @@
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/core.hpp"
+#include "math.h"
+#define PI 3.14159265
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        cout << "Usage: " << argv[0] << " <image_path> <threshold_value>" << endl;
+        return -1;
+    }
+
+    Mat image = imread(argv[1], IMREAD_GRAYSCALE);
+
+    if (!image.data) {
+        cout << "Could not find the image!" << endl;
+        return -1;
+    }
+
+    // Gaussian smoothing
+    Mat smoothed_image = image.clone();
+    int gaussian_kernel[5][5] = {
+        {2, 4, 5, 4, 2},
+        {4, 9, 12, 9, 4},
+        {5, 12, 15, 12, 5},
+        {4, 9, 12, 9, 4},
+        {2, 4, 5, 4, 2}
+    };
+
+    for (int i = 2; i < image.rows - 2; i++) {
+        for (int j = 2; j < image.cols - 2; j++) {
+            double val = 0.0;
+            for (int m = -2; m <= 2; m++) {
+                for (int n = -2; n <= 2; n++) {
+                    val += (double)(gaussian_kernel[m + 2][n + 2] * image.at<uchar>(i + m, j + n)) / 159;
+                }
+            }
+            smoothed_image.at<uchar>(i, j) = cvRound(val);
+        }
+    }
+
+    // Sobel edge detection
+    Mat output = smoothed_image.clone();
+    int T = atoi(argv[2]);  // Threshold value from command-line argument
+    int gx, gy, G;
+    int kernel_x[3][3] = { {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1} };
+    int kernel_y[3][3] = { {-1, -2, -1}, {0, 0, 0}, {1, 2, 1} };
+
+    for (int i = 1; i < smoothed_image.rows - 1; i++) {
+        for (int j = 1; j < smoothed_image.cols - 1; j++) {
+            gx = 0;
+            gy = 0;
+            for (int m = -1; m <= 1; m++) {
+                for (int n = -1; n <= 1; n++) {
+                    gx += kernel_x[m + 1][n + 1] * smoothed_image.at<uchar>(i + m, j + n);
+                    gy += kernel_y[m + 1][n + 1] * smoothed_image.at<uchar>(i + m, j + n);
+                }
+            }
+
+            G = abs(gx) + abs(gy);
+
+            if (G > T)
+                output.at<uchar>(i, j) = 255;
+            else
+                output.at<uchar>(i, j) = 0;
+        }
+    }
+
+    namedWindow("Original Image");
+    imshow("Original Image", image);
+    namedWindow("Gaussian Smoothing");
+    imshow("Gaussian Smoothing", smoothed_image);
+    namedWindow("Edge Detection");
+    imshow("Edge Detection", output);
+    imwrite("Gaussian_Smoothing_image.jpg", smoothed_image);
+    imwrite("Edge_Detection_image.jpg", output);
+    waitKey(0);
+
+    return 0;
+}

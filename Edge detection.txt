@@ -1,0 +1,58 @@
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <iostream>
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv)
+{
+	if (argc != 3)
+	{
+		cout << "Usage: edge detection Image To Load And Display Threshold" <<
+			endl;
+		return -1;
+	}
+	Mat image;
+	image = imread(argv[1], IMREAD_COLOR);
+	int T = atoi(argv[2]);
+	if (!image.data)
+	{
+		cout << "Couldn't load the image, please try again." << std::endl;
+		return -1;
+	}
+	Mat gray;
+	cvtColor(image, gray, COLOR_BGR2GRAY);
+	int h = gray.rows;
+	int w = gray.cols;
+	cout << "Width: " << w << endl;
+	cout << "Height: " << h << endl;
+	Mat output = gray.clone();
+	int Gx = 0;
+	int Gy = 0;
+	int G = 0;
+	for (int i = 0; i < h - 1; i++)
+	{
+		for (int j = 0; j < w - 1; j++)
+		{
+			Gx = gray.at<uchar>(i, j) - gray.at<uchar>(i, j + 1);
+			Gy = gray.at<uchar>(i, j) - gray.at<uchar>(i + 1, j);
+			G = abs(Gx) + abs(Gy);
+			if (G >= T)
+				output.at<uchar>(i, j) = 0;
+			else
+				output.at<uchar>(i, j) = 255;
+		}
+	}
+	imwrite("Output Image.jpg", output);
+	namedWindow("Display window", WINDOW_AUTOSIZE);
+	imshow("Display window", output);
+	namedWindow("Display Gray", WINDOW_AUTOSIZE);
+	imshow("Display Gray", gray);
+	waitKey(0);
+	image.release();
+	gray.release();
+	output.release();
+	return 0;
+}
