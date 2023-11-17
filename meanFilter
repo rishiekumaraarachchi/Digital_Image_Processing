@@ -1,0 +1,61 @@
+#include <stdio.h>
+#include <iostream>
+#include <opencv.hpp>
+#include <core\core.hpp>
+#include <imgproc.hpp>
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char* argv[]) {
+	if (argc != 3) {
+		cout << "Enter project.exe ImageFIleName kernelSize";
+		return -1;
+	}
+
+	Mat img;
+	img = imread(argv[1], 1);
+	if (img.empty()) {
+		cout << "Couldn't load the image";
+		return -1;
+	}
+
+	int width = img.cols;
+	int height = img.rows;
+
+	Mat gray(height, width, CV_8UC1, Scalar(0));
+	cvtColor(img, gray, COLOR_BGR2GRAY);
+	Mat MeanFilteredImage = gray.clone();
+
+	int k = atoi(argv[2]);
+	int adj = k / 2;
+
+	int sum;
+	int avg = 0;
+	for (int i = adj; i < height - adj; i++) {
+		for (int j = adj; j < width - adj; j++) {
+			sum = 0;
+			for (int g = i - adj; g <= i + adj; g++) {
+				for (int h = j - adj; h <= j + adj; h++) {
+					sum = sum + (int)gray.at<uchar>(g, h);
+				}
+			}
+			avg = sum / (k * k);
+			MeanFilteredImage.at<uchar>(i, j) = (uchar)avg;
+		}
+	}
+
+	imwrite("Mean_Filtered_Image.jpg", MeanFilteredImage);
+	namedWindow("Image");
+	imshow("Image", img);
+	namedWindow("Gray");
+	imshow("Gray", gray);
+	namedWindow("Mean Filtered Image");
+	imshow("Mean Filtered Image", MeanFilteredImage);
+	waitKey(0);
+	img.release();
+	gray.release();
+	MeanFilteredImage.release();
+
+	return 0;
+}
