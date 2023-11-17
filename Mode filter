@@ -1,0 +1,93 @@
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <iostream>
+#include <vector>
+
+using namespace cv;
+using namespace std;
+
+int findMode(int arr[], int n) {
+	int mode = -1;
+	int maxCount = 0;
+
+	for (int i = 0; i < n; i++) {
+		int count = 1;
+
+		for (int j = i + 1; j < n; j++) {
+			if (arr[i] == arr[j]) {
+				count++;
+			}
+		}
+
+		if (count > maxCount) {
+			maxCount = count;
+			mode = arr[i];
+		}
+	}
+
+	return mode;
+}
+
+int main(int argc, char* argv[]) {
+
+	if (argc != 3) {
+		cout << "Enter project name.exe image file and after kernel size here";
+		return -1;
+	}
+
+	Mat img;
+	img = imread(argv[1], 1);
+	if (img.empty()) {
+		cout << "Couldn't load the image, please try again.";
+		return -1;
+	}
+
+	Mat gray;
+	cvtColor(img, gray, COLOR_BGR2GRAY);
+
+	int width = gray.cols;
+	int height = gray.rows;
+
+	int kernelSize = atoi(argv[2]);
+	int adj = kernelSize / 2;
+	int* kernelArray = new int[kernelSize * kernelSize];
+	int index;
+	int middleIndex = (kernelSize * kernelSize) / 2;
+
+	Mat modeFilteredImage = gray.clone();
+
+	for (int i = adj; i < height - adj; i++) {
+		for (int j = adj; j < width - adj; j++) {
+			index = 0;
+			for (int a = i - adj; a <= i + adj; a++) {
+				for (int b = j - adj; b <= j + adj; b++) {
+					kernelArray[index] = (int)gray.at<uchar>(a, b);
+					index += 1;
+				}
+			}
+			int modeValue = findMode(kernelArray, kernelSize * kernelSize);
+			modeFilteredImage.at<uchar>(i, j) = (uchar)modeValue;
+		}
+	}
+
+	namedWindow("Image", WINDOW_NORMAL);
+	imshow("Image", img);
+
+	namedWindow("Gray Image", WINDOW_NORMAL);
+	imshow("Gray Image", gray);
+
+	namedWindow("Mode Filtered Image", WINDOW_NORMAL);
+	imshow("Mode Filtered Image", modeFilteredImage);
+
+	imwrite("Mode_Filtered_Image.jpg", modeFilteredImage);
+
+
+	waitKey(0);
+
+	img.release();
+	gray.release();
+	modeFilteredImage.release();
+
+	return 0;
+}
