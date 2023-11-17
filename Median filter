@@ -1,0 +1,84 @@
+#include <stdio.h>
+#include <iostream>
+#include <opencv.hpp>
+#include <core\core.hpp>
+#include <imgproc.hpp>
+
+using namespace cv;
+using namespace std;
+
+void insertionSort(int arr[], int n)
+{
+	int i, key, j;
+	for (i = 1; i < n; i++) {
+		key = arr[i];
+		j = i - 1;
+
+		while (j >= 0 && arr[j] > key) {
+			arr[j + 1] = arr[j];
+			j = j - 1;
+		}
+		arr[j + 1] = key;
+	}
+}
+
+int main(int argc, char* argv[]) {
+	if (argc != 3) {
+		cout << "Enter projectName.exe ImageFIleName and after kernelSize";
+		return -1;
+	}
+	Mat img;
+	img = imread(argv[1], 1);
+	if (img.empty()) {
+		cout << "Couldn't load the image";
+		return -1;
+	}
+
+	Mat gray;
+	cvtColor(img, gray, COLOR_BGR2GRAY);
+
+	int width = gray.cols;
+	int height = gray.rows;
+
+	int kernelSize = atoi(argv[2]);
+	int adj = kernelSize / 2;
+	int* kernelArray = new int[kernelSize * kernelSize];
+	int index;
+	int middleIndex = (kernelSize * kernelSize) / 2;
+
+	Mat medianFilteredImage = gray.clone();
+
+	for (int i = adj; i < height - adj; i++) {
+		for (int j = adj; j < width - adj; j++) {
+			index = 0;
+			for (int a = i - adj; a <= i + adj; a++) {
+				for (int b = j - adj; b <= j + adj; b++) {
+					kernelArray[index] = (int)gray.at<uchar>(a, b);
+					index += 1;
+				}
+			}
+			insertionSort(kernelArray, kernelSize * kernelSize);
+			medianFilteredImage.at<uchar>(i, j) = (uchar)kernelArray[middleIndex];
+		}
+	}
+
+	namedWindow("Input Image", WINDOW_NORMAL);
+	imshow("Image", img);
+
+	namedWindow("Gray Image", WINDOW_NORMAL);
+	imshow("Gray Image", gray);
+
+	namedWindow("Median Filtered Image", WINDOW_NORMAL);
+	imshow("Median Filtered Image", medianFilteredImage);
+
+	imwrite("Median_Filtered_Image.jpg", medianFilteredImage);
+
+
+	waitKey(0);
+
+	img.release();
+	gray.release();
+	medianFilteredImage.release();
+
+	return 0;
+}
